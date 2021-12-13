@@ -1,0 +1,55 @@
+parameters:
+- name: type
+  type: string
+  default: internal
+  values:
+  - internal
+  - public
+
+jobs:
+- job: PublishPackages
+  displayName: Publish Packages
+  pool:
+    vmImage: windows-latest
+  steps:
+  - task: DownloadPipelineArtifact@2
+    inputs:
+      artifact: $(ArtifactName)
+      path: $(Pipeline.Workspace)/$(ArtifactName)
+      # source: specific
+      # project: CoreWf
+      # pipeline: UiPath.CoreWf
+      # runVersion: specific
+      # runId: 2218741
+
+  - template: Signing/signing.yml@templates
+    parameters:
+      azureConnectionName: $(AzureConnectionSigning)
+      pathsToSign: $(Pipeline.Workspace)/$(ArtifactName)/*.nupkg
+
+  - task: NuGetToolInstaller@0
+    displayName: "Use NuGet $(NuGetVersionSpec)"
+    inputs:
+      versionSpec: $(NuGetVersionSpec)
+    condition: succeeded()
+
+  - task: NuGetAuthenticate@0
+    inputs:
+      forceReinstallCredentialProvider: true
+
+  - task: NuGetCommand@2
+    displayName: NuGet Push Connect feed
+    inputs:
+      command: push
+      packagesToPush: >
+        $(Pipeline.Workspace)/$(ArtifactName)/CoreWf/**/*.nupkg;!
+        $(Pipeline.Workspace)/$(ArtifactName)/CoreWf/**/*.snupkg;!
+        $(Pipeline.Workspace)/$(ArtifactName)/UiPath.Workflow/**/*.nupkg;!
+        $(Pipeline.Workspace)/$(ArtifactName)/UiPath.Workflow/**/*.snupkg;
+      ${{ if eq('parameters.type', 'public') }}:
+        nuGetFeedType: external
+        publishFeedCredentials: $(NugetServiceConnection)
+      ${{ else }}:
+        nuGetFeedType: internal
+        publishVstsFeed: $(AzureFeedInternal)
+    condition: succeeded()
