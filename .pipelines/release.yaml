@@ -16,11 +16,11 @@ jobs:
     inputs:
       artifact: $(ArtifactName)
       path: $(Pipeline.Workspace)/$(ArtifactName)
-      # source: specific
-      # project: CoreWf
-      # pipeline: UiPath.CoreWf
-      # runVersion: specific
-      # runId: 2218741
+      source: specific
+      project: CoreWf
+      pipeline: UiPath.CoreWf
+      runVersion: specific
+      runId: 2219127
 
   - template: Signing/signing.yml@templates
     parameters:
@@ -38,17 +38,26 @@ jobs:
       forceReinstallCredentialProvider: true
 
   - task: NuGetCommand@2
-    displayName: NuGet Push Connect feed
+    displayName: NuGet Push System.Activities
     inputs:
       command: push
-      packagesToPush: >
-        $(Pipeline.Workspace)/$(ArtifactName)/CoreWf/**/*.nupkg;!
-        $(Pipeline.Workspace)/$(ArtifactName)/CoreWf/**/*.snupkg;!
-        $(Pipeline.Workspace)/$(ArtifactName)/UiPath.Workflow/**/*.nupkg;!
-        $(Pipeline.Workspace)/$(ArtifactName)/UiPath.Workflow/**/*.snupkg;
-      ${{ if eq('parameters.type', 'public') }}:
+      packagesToPush: $(Pipeline.Workspace)/$(ArtifactName)/CoreWf/**/*.nupkg;!$(Pipeline.Workspace)/$(ArtifactName)/CoreWf/**/*.snupkg;
+      ${{ if eq(parameters.type, 'public') }}:
         nuGetFeedType: external
-        publishFeedCredentials: $(NugetServiceConnection)
+        publishFeedCredentials: $(NugetFeedServiceConnection)
+      ${{ else }}:
+        nuGetFeedType: internal
+        publishVstsFeed: $(AzureFeedInternal)
+    condition: succeeded()
+
+  - task: NuGetCommand@2
+    displayName: NuGet Push UiPath.Workflow
+    inputs:
+      command: push
+      packagesToPush: $(Pipeline.Workspace)/$(ArtifactName)/UiPath.Workflow/**/*.nupkg;!$(Pipeline.Workspace)/$(ArtifactName)/UiPath.Workflow/**/*.snupkg;
+      ${{ if eq(parameters.type, 'public') }}:
+        nuGetFeedType: external
+        publishFeedCredentials: $(NugetFeedServiceConnection)
       ${{ else }}:
         nuGetFeedType: internal
         publishVstsFeed: $(AzureFeedInternal)

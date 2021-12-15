@@ -36,8 +36,9 @@ stages:
       type: internal
 
 - stage: ReleasePublic
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
-  dependsOn: BuildAndTest
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/infra/iac_pipeline'))
+  # condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+  # dependsOn: BuildAndTest
   jobs:
   - template: .pipelines/release.yaml
     parameters:
