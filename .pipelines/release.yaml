@@ -16,11 +16,11 @@ jobs:
     inputs:
       artifact: $(ArtifactName)
       path: $(Pipeline.Workspace)/$(ArtifactName)
-      source: specific
-      project: CoreWf
-      pipeline: UiPath.CoreWf
-      runVersion: specific
-      runId: 2219127
+      # source: specific
+      # project: CoreWf
+      # pipeline: UiPath.CoreWf
+      # runVersion: specific
+      # runId: 2219127
 
   - template: Signing/signing.yml@templates
     parameters:
