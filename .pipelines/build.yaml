@@ -4,23 +4,36 @@ jobs:
   pool:
     vmImage: windows-2022
   steps:
-  - task: PowerShell@2
-    displayName: Get Version from Directory.Build.props
-    inputs:
-      targetType: inline
-      script: |
-        $xml = [Xml] (Get-Content .\src\Directory.Build.props)
+  - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/master') }}:
+    - task: PowerShell@2
+      displayName: Get Version from Directory.Build.props
+      inputs:
+        targetType: inline
+        script: |
+          $xml = [Xml] (Get-Content .\src\Directory.Build.props)
 
-        $version = [String] $xml.Project.PropertyGroup.Version
-        $version = $version.Trim()
+          $version = [String] $xml.Project.PropertyGroup.Version
+          $version = $version.Trim()
 
-        Write-Host "##vso[task.setvariable variable=Version;]$version"
+          Write-Host "##vso[task.setvariable variable=Version;]$version"
+  - ${{ else }}:
+    - task: PowerShell@2
+      displayName: Get Version from Directory.Build.props
+      inputs:
+        targetType: inline
+        script: |
+          $xml = [Xml] (Get-Content .\src\Directory.Build.props)
+
+          $version = [String] $xml.Project.PropertyGroup.Version
+          $version = $version.Trim()
+
+          Write-Host "##vso[task.setvariable variable=Version;]$version-alpha-$(Build.BuildNumber)"
 
   - task: DotNetCoreCLI@2
     displayName: dotnet build
     inputs:
       projects: src/System.Activities.sln
-      arguments: --configuration $(BuildConfiguration) -p:Version="$(Version)-$(Build.BuildNumber)"
+      arguments: --configuration $(BuildConfiguration) -p:Version="$(Version)"
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test
